@@ -116,8 +116,11 @@ Private Sub PrintList(ByVal doc As Document, ByVal pageList As String)
     Dim spec As String
     spec = WordPageSpec(doc, pageList)
     Debug.Print "JT Hotkeys: PrintOut Pages:=" & spec
-    JT_Say IIf(JT_DryRun, "Test mode. Would print ", "Printing ") & SpokenList(pageList) & "."
-    If JT_DryRun Then Exit Sub
+    If JT_DryRun Then
+        JT_Say "Test mode. Would print " & SpokenList(pageList) & ". Word pages value: " & spec
+        Exit Sub
+    End If
+    JT_Say "Printing " & SpokenList(pageList) & "."
     On Error GoTo Failed
     doc.PrintOut Range:=wdPrintRangeOfPages, Pages:=spec, Copies:=1
     Exit Sub
@@ -148,17 +151,34 @@ End Function
 Private Function PhysicalToSpec(ByVal doc As Document, ByVal n As Long) As String
     Dim rng As Range, shown As Long, sect As Long
     On Error GoTo Fallback
+
+    ' Normal case: one section, numbering starts at 1, so the printed page
+    ' number IS the physical page number. Send it as-is.
+    If doc.Sections.Count = 1 And Not NumberingRestarts(doc.Sections(1)) Then
+        PhysicalToSpec = CStr(n)
+        Exit Function
+    End If
+
+    ' Otherwise ask Word what page number is printed on physical page n.
+    ' Look at the first character OF page n: a collapsed range at the very
+    ' start of a page can report the previous page (the old off-by-one bug,
+    ' where "2-3" printed pages 1-2).
     Set rng = doc.GoTo(What:=wdGoToPage, Which:=wdGoToAbsolute, Count:=n)
+    If rng.Start < doc.Content.End - 1 Then Set rng = doc.Range(rng.Start, rng.Start + 1)
+    If rng.Information(wdActiveEndPageNumber) <> n Then GoTo Fallback
     shown = rng.Information(wdActiveEndAdjustedPageNumber)
     sect = rng.Information(wdActiveEndSectionNumber)
-    If doc.Sections.Count = 1 And shown = n Then
-        PhysicalToSpec = CStr(n)
-    Else
-        PhysicalToSpec = "p" & shown & "s" & sect
-    End If
+    PhysicalToSpec = "p" & shown & "s" & sect
     Exit Function
 Fallback:
     PhysicalToSpec = CStr(n)
+End Function
+
+Private Function NumberingRestarts(ByVal sec As Section) As Boolean
+    On Error Resume Next
+    With sec.Headers(wdHeaderFooterPrimary).PageNumbers
+        NumberingRestarts = .RestartNumberingAtSection And .StartingNumber <> 1
+    End With
 End Function
 
 ' "3-5,8" -> "pages 3 to 5 and 8";  "7" -> "page 7"

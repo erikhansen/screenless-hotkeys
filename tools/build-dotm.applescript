@@ -22,6 +22,14 @@ on selectProject(docName)
 		set selected of r to true
 		delay 0.8
 		if name of (first window whose name starts with "Microsoft Visual Basic") is not ("Microsoft Visual Basic - " & docName) then error "Could not select project " & docName
+		-- Wait for the VBA editor's own menu bar (it has File > Import File...).
+		repeat 20 times
+			if exists menu item "Import File..." of menu "File" of menu bar 1 then return
+			perform action "AXRaise" of vbe
+			set frontmost to true
+			delay 0.3
+		end repeat
+		error "The VBA editor menu never appeared"
 	end tell
 end selectProject
 
