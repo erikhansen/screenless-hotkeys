@@ -27,7 +27,7 @@ Public Sub JT_PrintPages()
     pageCount = doc.ComputeStatistics(wdStatisticPages)
     current = Selection.Information(wdActiveEndPageNumber)
 
-    JT_Say "Print. Enter for current page, or type pages."
+    JT_Say "Press Enter for current page or enter the page number or page number range."
     Do
         answer = InputBox("Press Enter to print the current page (" & current & ")," & vbCr & _
                           "or type a page number like 7, or a range like 3-5." & vbCr & _
