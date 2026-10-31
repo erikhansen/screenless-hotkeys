@@ -16,7 +16,7 @@ Attribute VB_Name = "JTHotkeys"
 '==============================================================================
 Option Explicit
 
-Public Const JT_VERSION As String = "1.1.1"
+Public Const JT_VERSION As String = "1.2.0"
 
 ' Speak confirmations out loud (uses the macOS "say" command).
 Public Const JT_SPEAK As Boolean = True
@@ -32,12 +32,17 @@ Public JT_DryRun As Boolean
 '------------------------------------------------------------------------------
 ' THE HOTKEY LIST. One line per hotkey.
 '   wdKeyControl = the Control key on a Mac keyboard
-'   wdKeyShift = Shift, wdKeyAlt = Option
+'   wdKeyCommand = Command, wdKeyShift = Shift, wdKeyAlt = Option
 ' Avoid Control+Option combinations - VoiceOver uses those.
 '------------------------------------------------------------------------------
+Private Const KEY_UP_ARROW As Long = 38      ' key codes Word has no names for
+Private Const KEY_DOWN_ARROW As Long = 40
+
 Public Sub JT_BakeHotkeys()
     BindKey "JT_PrintPages", BuildKeyCode(wdKeyControl, wdKeyShift, wdKeyP)
     BindKey "JT_SayVersion", BuildKeyCode(wdKeyControl, wdKeyShift, wdKeyV)
+    BindKey "JT_PreviousPage", BuildKeyCode(wdKeyCommand, wdKeyAlt, KEY_UP_ARROW)
+    BindKey "JT_NextPage", BuildKeyCode(wdKeyCommand, wdKeyAlt, KEY_DOWN_ARROW)
     ' BindKey "JT_MyNextMacro", BuildKeyCode(wdKeyControl, wdKeyShift, wdKeyX)
 End Sub
 
@@ -58,6 +63,16 @@ Public Sub JT_Say(ByVal text As String)
     If Not JT_SPEAK Then Exit Sub
     On Error Resume Next
     AppleScriptTask "JTHotkeys.scpt", "speak", text
+    If Err.Number <> 0 Then Beep
+End Sub
+
+' Like JT_Say, but first cuts off anything still being spoken. Use for
+' hotkeys that get pressed repeatedly (page navigation).
+Public Sub JT_SayNow(ByVal text As String)
+    Debug.Print "JT Hotkeys: " & text
+    If Not JT_SPEAK Then Exit Sub
+    On Error Resume Next
+    AppleScriptTask "JTHotkeys.scpt", "speakNow", text
     If Err.Number <> 0 Then Beep
 End Sub
 

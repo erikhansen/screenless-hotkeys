@@ -5,6 +5,12 @@ on speak(textToSay)
 	return ""
 end speak
 
+-- Same as speak, but first stops any speech already in progress.
+on speakNow(textToSay)
+	do shell script "/usr/bin/pkill -x say; /usr/bin/say " & quoted form of textToSay & " > /dev/null 2>&1 &"
+	return ""
+end speakNow
+
 -- Highest CUPS job number so far (all printers, including finished jobs).
 -- Word VBA uses it to tell when its print job has reached the queue.
 on lastPrintJob(unused)
