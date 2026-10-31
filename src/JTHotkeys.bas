@@ -16,7 +16,7 @@ Attribute VB_Name = "JTHotkeys"
 '==============================================================================
 Option Explicit
 
-Public Const JT_VERSION As String = "1.1.0"
+Public Const JT_VERSION As String = "1.1.1"
 
 ' Speak confirmations out loud (uses the macOS "say" command).
 Public Const JT_SPEAK As Boolean = True

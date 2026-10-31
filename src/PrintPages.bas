@@ -140,10 +140,15 @@ Private Sub PrintJob(ByVal doc As Document, ByVal kind As String, ByVal pageList
         JT_Say "Added " & nParas & " paragraph numbers and " & nPages & " page number boxes." & _
                IIf(spec <> "", " Word pages value: " & spec, "")
     Else
-        ' Print in the foreground so the numbers are on the paper before we remove them.
+        ' Word for Mac keeps sending the job after PrintOut returns, so the
+        ' numbers must stay until the job has reached the print queue.
+        Dim oldDrawings As Boolean, jobBefore As String
         On Error Resume Next
         oldBackground = Options.PrintBackground
         Options.PrintBackground = False
+        oldDrawings = Options.PrintDrawingObjects
+        Options.PrintDrawingObjects = True            ' text boxes must print
+        jobBefore = LastPrintJob()
         On Error GoTo Failed
         Select Case kind
             Case "current": doc.PrintOut Range:=wdPrintCurrentPage, Copies:=1
@@ -151,7 +156,10 @@ Private Sub PrintJob(ByVal doc As Document, ByVal kind As String, ByVal pageList
             Case Else: doc.PrintOut Range:=wdPrintRangeOfPages, Pages:=spec, Copies:=1
         End Select
         On Error Resume Next
+        If JT_PRINT_NUMBERS Then WaitForPrintJob jobBefore
         Options.PrintBackground = oldBackground
+        Options.PrintDrawingObjects = oldDrawings
+        On Error GoTo Failed
     End If
 
     RemoveAdded added
@@ -293,6 +301,38 @@ Private Sub AddPageNumberTo(ByVal doc As Document, ByVal sec As Section, ByVal w
         End With
     End With
     count = count + 1
+End Sub
+
+' Highest CUPS job number so far (all printers, including finished jobs).
+Private Function LastPrintJob() As String
+    On Error Resume Next
+    LastPrintJob = AppleScriptTask("JTHotkeys.scpt", "lastPrintJob", "")
+End Function
+
+' Waits (up to a minute) until a new job shows up in the print queue, then a
+' few seconds more so Word finishes sending it.
+Private Sub WaitForPrintJob(ByVal jobBefore As String)
+    Dim deadline As Single
+    deadline = Timer + 60
+    If jobBefore <> "" Then
+        Do While Timer < deadline
+            Pause 0.5
+            If LastPrintJob() <> jobBefore Then Exit Do
+        Loop
+    End If
+    On Error Resume Next
+    Do While Application.BackgroundPrintingStatus > 0 And Timer < deadline
+        Pause 0.5
+    Loop
+    Pause 3
+End Sub
+
+Private Sub Pause(ByVal seconds As Single)
+    Dim t As Single
+    t = Timer
+    Do While Timer < t + seconds And Timer >= t
+        DoEvents
+    Loop
 End Sub
 
 Private Sub RemoveAdded(ByVal added As Collection)
