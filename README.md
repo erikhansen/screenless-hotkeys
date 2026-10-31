@@ -6,10 +6,12 @@ Keyboard shortcuts for Word that work without looking at the screen. Every actio
 
 | Keys | What it does |
 |------|--------------|
-| **Control + Shift + P** | Print pages. Then: **Enter** prints the current page · type **7** then Enter prints page 7 · type **3-5** then Enter prints pages 3 to 5 · **1,3,6-8** also works · **Escape** cancels. |
+| **Control + Shift + P** | Print pages. Then: **Enter** prints the current page · type **7** then Enter prints page 7 · type **3-5** then Enter prints pages 3 to 5 · **1,3,6-8** also works · **all** prints the whole document · **Escape** cancels. |
 | **Control + Shift + V** | Says which version of JT Hotkeys is installed. |
 
 Page numbers mean physical pages counted from the start of the document. If the number is out of range, it tells you and asks again.
+
+Every printout gets **"Page N" at the bottom** of each page and a **number beside each paragraph** in the left margin (counted from the top of the document, so the numbers are the same on every printout). These are added just for printing and removed right after, so the document itself isn't changed. Empty paragraphs and tables aren't numbered, and pages that already show a page number in the footer don't get a second one. To turn this off, set `JT_PRINT_NUMBERS = False` in `src/JTHotkeys.bas` and rebuild. To see where the numbers will go, run the `JT_PreviewPrintNumbers` macro, then run it again to remove them.
 
 ## First-time install
 

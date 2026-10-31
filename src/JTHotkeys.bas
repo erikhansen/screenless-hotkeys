@@ -16,10 +16,14 @@ Attribute VB_Name = "JTHotkeys"
 '==============================================================================
 Option Explicit
 
-Public Const JT_VERSION As String = "1.0.3"
+Public Const JT_VERSION As String = "1.1.0"
 
 ' Speak confirmations out loud (uses the macOS "say" command).
 Public Const JT_SPEAK As Boolean = True
+
+' Add page numbers and paragraph numbers to printouts (temporary; the
+' document itself is not changed).
+Public Const JT_PRINT_NUMBERS As Boolean = True
 
 ' When True, nothing is sent to the printer; the macro only says/logs what it
 ' would have printed. Toggle with the JT_ToggleDryRun macro (not saved).

@@ -7,10 +7,15 @@ Attribute VB_Name = "PrintPages"
 '     7  Enter          -> prints page 7
 '     3-5  Enter        -> prints pages 3 through 5
 '     1,3,6-8  Enter    -> prints pages 1, 3 and 6 through 8
+'     all  Enter        -> prints the whole document
 '     Escape            -> cancels
 '
 ' Page numbers are physical pages counted from the start of the document
 ' (page 1 = first page), regardless of any printed page numbering.
+'
+' The printout gets a page number at the bottom of each page and a number
+' beside each paragraph (see JT_PRINT_NUMBERS in JTHotkeys.bas). These are
+' added just for printing and removed right after; the document is unchanged.
 '==============================================================================
 Option Explicit
 
@@ -30,7 +35,7 @@ Public Sub JT_PrintPages()
     JT_Say "Press Enter for current page or enter the page number or page number range."
     Do
         answer = InputBox("Press Enter to print the current page (" & current & ")," & vbCr & _
-                          "or type a page number like 7, or a range like 3-5." & vbCr & _
+                          "or type a page number like 7, a range like 3-5, or all." & vbCr & _
                           "The document has " & pageCount & " pages.", "Print Pages")
         If StrPtr(answer) = 0 Then
             JT_Say "Print cancelled."
@@ -39,13 +44,17 @@ Public Sub JT_PrintPages()
 
         pageList = NormalizePages(answer)
         If pageList = "" Then
-            PrintCurrent doc, current
+            PrintJob doc, "current", "", current, pageCount
+            Exit Sub
+        End If
+        If pageList = "all" Then
+            PrintJob doc, "all", "", current, pageCount
             Exit Sub
         End If
 
         problem = ValidatePages(pageList, pageCount)
         If problem = "" Then
-            PrintList doc, pageList
+            PrintJob doc, "list", pageList, current, pageCount
             Exit Sub
         End If
         JT_Say problem & " Try again."
@@ -102,30 +111,216 @@ Private Function IsAllDigits(ByVal s As String) As Boolean
     IsAllDigits = True
 End Function
 
-Private Sub PrintCurrent(ByVal doc As Document, ByVal current As Long)
-    JT_Say IIf(JT_DryRun, "Test mode. Would print page ", "Printing page ") & current & "."
-    If JT_DryRun Then Exit Sub
+' kind: "current", "all" or "list".
+Private Sub PrintJob(ByVal doc As Document, ByVal kind As String, ByVal pageList As String, _
+                     ByVal current As Long, ByVal pageCount As Long)
+    Dim spoken As String, spec As String, added As Collection
+    Dim wasSaved As Boolean, oldBackground As Boolean, nParas As Long, nPages As Long
+    Dim want() As Boolean
+
+    Select Case kind
+        Case "current": spoken = "page " & current
+        Case "all": spoken = "all " & pageCount & IIf(pageCount = 1, " page", " pages")
+        Case Else: spoken = SpokenList(pageList): spec = WordPageSpec(doc, pageList)
+    End Select
+    JT_Say IIf(JT_DryRun, "Test mode. Would print ", "Printing ") & spoken & "."
+    Debug.Print "JT Hotkeys: kind=" & kind & " Pages:=" & spec
+
+    wasSaved = doc.Saved
+    Set added = New Collection
     On Error GoTo Failed
-    doc.PrintOut Range:=wdPrintCurrentPage, Copies:=1
+
+    If JT_PRINT_NUMBERS Then
+        want = PagesWanted(kind, pageList, current, pageCount)
+        nParas = AddParagraphNumbers(doc, want, added)
+        nPages = AddPageNumbers(doc, added)
+    End If
+
+    If JT_DryRun Then
+        JT_Say "Added " & nParas & " paragraph numbers and " & nPages & " page number boxes." & _
+               IIf(spec <> "", " Word pages value: " & spec, "")
+    Else
+        ' Print in the foreground so the numbers are on the paper before we remove them.
+        On Error Resume Next
+        oldBackground = Options.PrintBackground
+        Options.PrintBackground = False
+        On Error GoTo Failed
+        Select Case kind
+            Case "current": doc.PrintOut Range:=wdPrintCurrentPage, Copies:=1
+            Case "all": doc.PrintOut Range:=wdPrintAllDocument, Copies:=1
+            Case Else: doc.PrintOut Range:=wdPrintRangeOfPages, Pages:=spec, Copies:=1
+        End Select
+        On Error Resume Next
+        Options.PrintBackground = oldBackground
+    End If
+
+    RemoveAdded added
+    doc.Saved = wasSaved
     Exit Sub
 Failed:
     JT_Say "Printing failed. " & Err.Description
+    On Error Resume Next
+    RemoveAdded added
+    doc.Saved = wasSaved
 End Sub
 
-Private Sub PrintList(ByVal doc As Document, ByVal pageList As String)
-    Dim spec As String
-    spec = WordPageSpec(doc, pageList)
-    Debug.Print "JT Hotkeys: PrintOut Pages:=" & spec
-    If JT_DryRun Then
-        JT_Say "Test mode. Would print " & SpokenList(pageList) & ". Word pages value: " & spec
+' True for each physical page that will be printed.
+Private Function PagesWanted(ByVal kind As String, ByVal pageList As String, _
+                             ByVal current As Long, ByVal pageCount As Long) As Boolean()
+    Dim want() As Boolean, parts() As String, ends() As String
+    Dim i As Long, j As Long
+    ReDim want(1 To pageCount + 1)
+    Select Case kind
+        Case "current"
+            If current >= 1 And current <= pageCount Then want(current) = True
+        Case "all"
+            For i = 1 To pageCount: want(i) = True: Next i
+        Case Else
+            parts = Split(pageList, ",")
+            For i = LBound(parts) To UBound(parts)
+                ends = Split(parts(i), "-")
+                For j = CLng(ends(0)) To CLng(ends(UBound(ends)))
+                    want(j) = True
+                Next j
+            Next i
+    End Select
+    PagesWanted = want
+End Function
+
+'------------------------------------------------------------------------------
+' Temporary numbers for the printout. They are floating text boxes ("in front
+' of text"), so they never move the document's text or change its pages.
+' Everything added goes into `added` and is deleted after printing.
+'------------------------------------------------------------------------------
+
+' Numbers every paragraph that has text (1, 2, 3... through the whole document,
+' skipping empty paragraphs and tables) in the left margin. Only paragraphs that
+' start on a printed page get a box, but the numbering always counts from the
+' top of the document so the numbers are the same on every printout.
+Private Function AddParagraphNumbers(ByVal doc As Document, want() As Boolean, _
+                                     ByVal added As Collection) As Long
+    Dim p As Paragraph, idx As Long, pg As Long, txt As String, startRange As Range
+    For Each p In doc.Paragraphs
+        txt = p.Range.Text
+        txt = Replace(Replace(Replace(Replace(txt, vbCr, ""), Chr(12), ""), Chr(7), ""), " ", "")
+        If txt <> "" Then
+            If Not p.Range.Information(wdWithInTable) Then
+                idx = idx + 1
+                ' Look at the paragraph's first character (a collapsed range at
+                ' a page boundary can report the previous page).
+                Set startRange = doc.Range(p.Range.Start, p.Range.Start + 1)
+                pg = startRange.Information(wdActiveEndPageNumber)
+                If pg >= LBound(want) And pg <= UBound(want) Then
+                    If want(pg) Then
+                        AddMarginLabel doc, p, CStr(idx), added
+                        AddParagraphNumbers = AddParagraphNumbers + 1
+                    End If
+                End If
+            End If
+        End If
+    Next p
+End Function
+
+Private Sub AddMarginLabel(ByVal doc As Document, ByVal p As Paragraph, ByVal label As String, _
+                           ByVal added As Collection)
+    Const BOX_W As Single = 30
+    Dim shp As Shape, leftMargin As Single, x As Single
+    leftMargin = p.Range.Sections(1).PageSetup.LeftMargin
+    x = leftMargin - BOX_W - 6
+    If x < 2 Then x = 2
+
+    Set shp = doc.Shapes.AddTextbox(msoTextOrientationHorizontal, 0, 0, BOX_W, 14, p.Range)
+    added.Add shp
+    With shp
+        .Line.Visible = msoFalse
+        .Fill.Visible = msoFalse
+        .WrapFormat.Type = wdWrapFront
+        .RelativeHorizontalPosition = wdRelativeHorizontalPositionPage
+        .RelativeVerticalPosition = wdRelativeVerticalPositionParagraph
+        .Left = x
+        .Top = 0
+        With .TextFrame
+            .MarginLeft = 0: .MarginRight = 0: .MarginTop = 0: .MarginBottom = 0
+            .TextRange.Text = label
+            .TextRange.Font.Size = 9
+            .TextRange.ParagraphFormat.Alignment = wdAlignParagraphRight
+            .TextRange.ParagraphFormat.SpaceBefore = 0
+            .TextRange.ParagraphFormat.SpaceAfter = 0
+        End With
+    End With
+End Sub
+
+' Puts "Page N" at the bottom centre of every page, unless that footer already
+' shows a page number.
+Private Function AddPageNumbers(ByVal doc As Document, ByVal added As Collection) As Long
+    Dim sec As Section
+    For Each sec In doc.Sections
+        AddPageNumberTo doc, sec, wdHeaderFooterPrimary, added, AddPageNumbers
+        If sec.PageSetup.DifferentFirstPageHeaderFooter Then _
+            AddPageNumberTo doc, sec, wdHeaderFooterFirstPage, added, AddPageNumbers
+        If sec.PageSetup.OddAndEvenPagesHeaderFooter Then _
+            AddPageNumberTo doc, sec, wdHeaderFooterEvenPages, added, AddPageNumbers
+    Next sec
+End Function
+
+Private Sub AddPageNumberTo(ByVal doc As Document, ByVal sec As Section, ByVal which As Long, _
+                            ByVal added As Collection, ByRef count As Long)
+    Dim ft As HeaderFooter, shp As Shape, r As Range, f As Field
+    Set ft = sec.Footers(which)
+    If sec.Index > 1 And ft.LinkToPrevious Then Exit Sub   ' shares the previous section's footer
+    For Each f In ft.Range.Fields
+        If f.Type = wdFieldPage Then Exit Sub                ' already has a page number
+    Next f
+
+    Set shp = ft.Shapes.AddTextbox(msoTextOrientationHorizontal, 0, 0, 120, 16, ft.Range)
+    added.Add shp
+    With shp
+        .Line.Visible = msoFalse
+        .Fill.Visible = msoFalse
+        .WrapFormat.Type = wdWrapFront
+        .RelativeHorizontalPosition = wdRelativeHorizontalPositionPage
+        .RelativeVerticalPosition = wdRelativeVerticalPositionPage
+        .Left = wdShapeCenter
+        .Top = sec.PageSetup.PageHeight - (sec.PageSetup.BottomMargin / 2) - 8
+        With .TextFrame
+            .MarginLeft = 0: .MarginRight = 0: .MarginTop = 0: .MarginBottom = 0
+            .TextRange.Text = "Page "
+            .TextRange.Font.Size = 10
+            .TextRange.ParagraphFormat.Alignment = wdAlignParagraphCenter
+            Set r = .TextRange
+            r.SetRange r.Start + Len("Page "), r.Start + Len("Page ")   ' right after "Page "
+            doc.Fields.Add Range:=r, Type:=wdFieldPage
+        End With
+    End With
+    count = count + 1
+End Sub
+
+Private Sub RemoveAdded(ByVal added As Collection)
+    Dim i As Long
+    On Error Resume Next
+    For i = added.Count To 1 Step -1
+        added(i).Delete
+    Next i
+End Sub
+
+' Test helper (no hotkey): adds the print numbers to the whole document so you
+' can see where they go. Run it again to remove them.
+Public Sub JT_PreviewPrintNumbers()
+    Static previewShapes As Collection
+    Dim want() As Boolean, n As Long
+    If Documents.Count = 0 Then Exit Sub
+    If Not previewShapes Is Nothing Then
+        RemoveAdded previewShapes
+        Set previewShapes = Nothing
+        JT_Say "Print numbers removed."
         Exit Sub
     End If
-    JT_Say "Printing " & SpokenList(pageList) & "."
-    On Error GoTo Failed
-    doc.PrintOut Range:=wdPrintRangeOfPages, Pages:=spec, Copies:=1
-    Exit Sub
-Failed:
-    JT_Say "Printing failed. " & Err.Description
+    Set previewShapes = New Collection
+    n = ActiveDocument.ComputeStatistics(wdStatisticPages)
+    want = PagesWanted("all", "", 0, n)
+    AddParagraphNumbers ActiveDocument, want, previewShapes
+    AddPageNumbers ActiveDocument, previewShapes
+    JT_Say "Print numbers shown. Run this again to remove them."
 End Sub
 
 ' Word's Pages:= argument uses the page numbers *printed* on the page and,
