@@ -16,7 +16,7 @@ Page numbers mean physical pages counted from the start of the document. If the 
 Open Terminal and run:
 
 ```bash
-cd ~ && git clone https://github.com/OWNER/jt-word-hotkeys.git && ~/jt-word-hotkeys/install.sh
+cd ~ && git clone https://github.com/erikhansen/screenless-hotkeys.git && ~/screenless-hotkeys/install.sh
 ```
 
 (The first time you use `git`, macOS may offer to install the "command line developer tools". Accept that and run the command again.)
@@ -26,7 +26,7 @@ The first time Word opens after installing, it may ask whether to enable macros 
 ## Getting updates
 
 ```bash
-~/jt-word-hotkeys/update.sh
+~/screenless-hotkeys/update.sh
 ```
 
 This downloads the latest version, closes Word (Word asks you to save any open documents), installs the update, and reopens Word. You'll hear "J T hotkeys installed" when it's done.
