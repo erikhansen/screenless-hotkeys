@@ -25,10 +25,38 @@ on selectProject(docName)
 	end tell
 end selectProject
 
+-- Loads/unloads JTHotkeys.dotm via Tools > Templates and Add-ins.
+-- Returns whether it was loaded before.
+on setAddinLoaded(wantOn)
+	set wasOn to false
+	tell application "System Events" to tell process "Microsoft Word"
+		set frontmost to true
+		delay 0.4
+		click menu item "Templates and Add-ins..." of menu "Tools" of menu bar 1
+		delay 1.5
+		set w to window "Templates and Add-ins"
+		repeat with r in rows of table 1 of scroll area 1 of w
+			if value of text field 1 of r is "JTHotkeys.dotm" then
+				set wasOn to ((value of checkbox 1 of r) is 1)
+				if wasOn is not wantOn then click checkbox 1 of r
+			end if
+		end repeat
+		delay 0.5
+		click button "OK" of w
+		delay 1
+	end tell
+	return wasOn
+end setAddinLoaded
+
 on run argv
 	set repoDir to item 1 of argv
 	set basFiles to rest of argv
 	set containerDocs to (POSIX path of (path to home folder)) & "Library/Containers/com.microsoft.Word/Data/Documents/JTHotkeys.dotm"
+
+	-- Unload the installed copy so macro names aren't ambiguous during the build.
+	tell application "Microsoft Word" to activate
+	delay 0.5
+	set addinWasLoaded to my setAddinLoaded(false)
 
 	with timeout of 60 seconds
 		tell application "Microsoft Word"
@@ -73,10 +101,13 @@ on run argv
 
 	with timeout of 60 seconds
 		tell application "Microsoft Word"
+			-- Store the key assignments inside the template.
+			run VB macro macro name "JT_BakeHotkeys"
 			save as document docName file name containerDocs file format format templateME
 			close document "JTHotkeys.dotm" saving no
 		end tell
 	end timeout
 	do shell script "mv " & quoted form of containerDocs & " " & quoted form of (repoDir & "/dist/JTHotkeys.dotm")
+	if addinWasLoaded then my setAddinLoaded(true)
 	return "Built dist/JTHotkeys.dotm"
 end run

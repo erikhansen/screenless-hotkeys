@@ -2,16 +2,21 @@ Attribute VB_Name = "JTHotkeys"
 '==============================================================================
 ' JT Hotkeys - core module
 '
-' Registers keyboard shortcuts every time Word starts (AutoExec) and provides
-' shared helpers (speech feedback, beeps).
+' Holds the hotkey list and shared helpers (speech feedback, test mode).
+'
+' HOW THE HOTKEYS GET INSTALLED: build.sh runs JT_BakeHotkeys inside the
+' template while building it, which stores the key assignments in the .dotm
+' itself. When Word loads the template from its Startup folder, the keys come
+' with it. (Binding keys from a Startup add-in at launch does NOT work on Mac.)
 '
 ' TO ADD A NEW HOTKEY:
 '   1. Put the new macro in its own module (see PrintPages.bas as an example).
-'   2. Add ONE line to RegisterHotkeys below.
+'   2. Add ONE line to JT_BakeHotkeys below.
+'   3. Run build.sh.
 '==============================================================================
 Option Explicit
 
-Public Const JT_VERSION As String = "1.0.1"
+Public Const JT_VERSION As String = "1.0.2"
 
 ' Speak confirmations out loud (uses the macOS "say" command).
 Public Const JT_SPEAK As Boolean = True
@@ -21,37 +26,21 @@ Public Const JT_SPEAK As Boolean = True
 Public JT_DryRun As Boolean
 
 '------------------------------------------------------------------------------
-' Runs automatically when Word starts (because this template is in Word's
-' Startup folder).
-'------------------------------------------------------------------------------
-Public Sub AutoExec()
-    RegisterHotkeys
-End Sub
-
-'------------------------------------------------------------------------------
 ' THE HOTKEY LIST. One line per hotkey.
-'   BuildKeyCode(wdKeyControl, ...) = the Control key on a Mac keyboard
+'   wdKeyControl = the Control key on a Mac keyboard
 '   wdKeyShift = Shift, wdKeyAlt = Option
 ' Avoid Control+Option combinations - VoiceOver uses those.
 '------------------------------------------------------------------------------
-Public Sub RegisterHotkeys()
+Public Sub JT_BakeHotkeys()
     BindKey "JT_PrintPages", BuildKeyCode(wdKeyControl, wdKeyShift, wdKeyP)
     BindKey "JT_SayVersion", BuildKeyCode(wdKeyControl, wdKeyShift, wdKeyV)
     ' BindKey "JT_MyNextMacro", BuildKeyCode(wdKeyControl, wdKeyShift, wdKeyX)
 End Sub
 
-' Assigns a shortcut to a macro. Bindings are added to Normal in memory and
-' re-added on every launch, so Normal.dotm is never marked as changed.
-Public Sub BindKey(ByVal macroName As String, ByVal keyCode As Long)
-    Dim wasSaved As Boolean
-    On Error GoTo Failed
-    wasSaved = NormalTemplate.Saved
-    CustomizationContext = NormalTemplate
+' Stores a shortcut in the document/template that contains this code.
+Private Sub BindKey(ByVal macroName As String, ByVal keyCode As Long)
+    CustomizationContext = ThisDocument
     KeyBindings.Add KeyCategory:=wdKeyCategoryMacro, Command:=macroName, KeyCode:=keyCode
-    NormalTemplate.Saved = wasSaved
-    Exit Sub
-Failed:
-    Debug.Print "JT Hotkeys: could not bind " & macroName & ": " & Err.Description
 End Sub
 
 '------------------------------------------------------------------------------

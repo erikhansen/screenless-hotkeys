@@ -43,15 +43,15 @@ rm "$HOME/Library/Application Scripts/com.microsoft.Word/JTHotkeys.scpt"
 ## For maintainers
 
 * `src/*.bas` holds the macro source code, kept as text so changes can be reviewed and diffed.
-* `dist/JTHotkeys.dotm` is the built Word template that actually gets installed. **Rebuild it whenever `src/` changes** (see [BUILD.md](BUILD.md)).
+* `dist/JTHotkeys.dotm` is the built Word template that actually gets installed, including its key assignments. **Rebuild it with `./build.sh` whenever `src/` changes** (see [BUILD.md](BUILD.md)).
 * `applescript/JTHotkeys.applescript` lets the macros speak (Word's sandbox can only run AppleScripts kept in `~/Library/Application Scripts/com.microsoft.Word/`).
 
 ### Adding a new hotkey
 
 1. Create `src/MyFeature.bas` with a `Public Sub JT_MyFeature()`. Use `JT_Say "..."` for spoken feedback.
-2. Add one line to `RegisterHotkeys` in `src/JTHotkeys.bas`:
+2. Add one line to `JT_BakeHotkeys` in `src/JTHotkeys.bas`:
    `BindKey "JT_MyFeature", BuildKeyCode(wdKeyControl, wdKeyShift, wdKeyM)`
-3. Bump `JT_VERSION`, rebuild the `.dotm`, commit, and push. He runs `update.sh`.
+3. Bump `JT_VERSION`, run `./build.sh` (see [BUILD.md](BUILD.md)), commit, and push. He runs `update.sh`.
 
 Avoid **Control + Option** combinations, because VoiceOver uses them.
 
