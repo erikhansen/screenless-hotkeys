@@ -16,7 +16,7 @@ Attribute VB_Name = "JTHotkeys"
 '==============================================================================
 Option Explicit
 
-Public Const JT_VERSION As String = "1.3.0"
+Public Const JT_VERSION As String = "1.4.0"
 
 ' Speak confirmations out loud (uses the macOS "say" command).
 Public Const JT_SPEAK As Boolean = True
@@ -46,6 +46,7 @@ Public Sub JT_BakeHotkeys()
     BindKey "JT_NextPage", BuildKeyCode(wdKeyCommand, wdKeyAlt, KEY_DOWN_ARROW)
     BindKey "JT_PreviousParagraph", BuildKeyCode(wdKeyControl, wdKeyAlt, KEY_UP_ARROW)
     BindKey "JT_NextParagraph", BuildKeyCode(wdKeyControl, wdKeyAlt, KEY_DOWN_ARROW)
+    BindKey "JT_OpenChatGPT", BuildKeyCode(wdKeyControl, wdKeyAlt, wdKeyCommand, wdKeyG)
     ' BindKey "JT_MyNextMacro", BuildKeyCode(wdKeyControl, wdKeyShift, wdKeyX)
 End Sub
 

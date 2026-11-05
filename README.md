@@ -77,21 +77,26 @@ sudo chown -R "$USER" "$HOME/Library/Application Scripts/com.microsoft.Word" "$H
 
 ### ChatGPT hotkey does nothing
 
-The ChatGPT hotkey clicks the ChatGPT button for you, so macOS has to allow Word to use accessibility features. The first time it's pressed, macOS shows an "Accessibility Access" prompt and an error saying the workflow "is not allowed assistive access". To fix it once:
+The ChatGPT hotkey clicks the ChatGPT button for you. Clicking needs the macOS **Accessibility** permission, which belongs to a small app called **JT Hotkeys Helper** (installed in your home folder's Applications folder). Word itself doesn't need it.
 
-1. Open **System Settings > Privacy & Security > Accessibility**.
-2. Turn on **Microsoft Word**. If it isn't listed, click **+** and add it from Applications.
-3. Quit Word (Command+Q) and open it again.
-4. Press **Control + Option + Command + G**. If macOS asks whether Word can control "System Events", choose **OK**.
+The first time you press **Control + Option + Command + G**, you'll hear "J T Hotkeys Helper needs Accessibility permission", and System Settings opens at the right page. Then:
 
-If the "not allowed assistive access" error still appears, also add `/System/Library/CoreServices/WorkflowServiceRunner.app` to the same Accessibility list. In the file picker, press Command+Shift+G and paste that path.
+1. In **System Settings > Privacy & Security > Accessibility**, turn on **JT Hotkeys Helper**. If macOS shows an "Accessibility Access" prompt naming JT Hotkeys Helper, choose **Open System Settings** and turn it on there.
+2. Press **Control + Option + Command + G** again. You'll hear "ChatGPT", and the ChatGPT panel opens.
+3. If macOS asks whether JT Hotkeys Helper may control **System Events**, choose **OK**.
+
+**If JT Hotkeys Helper is already switched on but you still hear that it needs permission**, the switch belongs to an older copy of the helper. Select **JT Hotkeys Helper** in the list, click the **minus (−)** button to remove it, press the hotkey again, and turn on the new entry. (Turning the switch off and on again also works sometimes, but removing it is more reliable.)
+
+macOS may also show a notice that "JT Hotkeys Helper can run in the background". That's expected. It only runs for a moment when you press the hotkey. Don't turn it off under **System Settings > General > Login Items & Extensions**, or the hotkey stops working.
 
 ## Uninstall
 
 ```bash
 rm "$HOME/Library/Group Containers/UBF8T346G9.Office/User Content.localized/Startup.localized/Word/JTHotkeys.dotm"
 rm "$HOME/Library/Application Scripts/com.microsoft.Word/JTHotkeys.scpt"
-rm -r "$HOME/Library/Services/Open ChatGPT in Word.workflow"
+launchctl bootout "gui/$(id -u)/com.screenless-hotkeys.helper"
+rm "$HOME/Library/LaunchAgents/com.screenless-hotkeys.helper.plist"
+rm -r "$HOME/Applications/JT Hotkeys Helper.app"
 ```
 
 ---
@@ -101,7 +106,7 @@ rm -r "$HOME/Library/Services/Open ChatGPT in Word.workflow"
 * `src/*.bas` holds the macro source code, kept as text so changes can be reviewed and diffed.
 * `dist/JTHotkeys.dotm` is the built Word template that actually gets installed, including its key assignments. **Rebuild it with `./build.sh` whenever `src/` changes** (see [BUILD.md](BUILD.md)).
 * `applescript/JTHotkeys.applescript` lets the macros speak (Word's sandbox can only run AppleScripts kept in `~/Library/Application Scripts/com.microsoft.Word/`).
-* `services/Open ChatGPT in Word.workflow` is a macOS Quick Action that clicks the ChatGPT add-in button (its AppleScript is inside `Contents/document.wflow`). Word can't assign keys to add-in buttons, so `install.sh` copies it to `~/Library/Services` and binds Control+Option+Command+G to it through the `pbs` defaults.
+* `applescript/JTHotkeysHelper.applescript` is **JT Hotkeys Helper.app**, which clicks the ChatGPT add-in button (Word can't assign keys to add-in buttons). `install.sh` builds it into `~/Applications` with `tools/build-helper.sh`, **only when it's missing or `helperVersion` changes**: every rebuild makes macOS forget its Accessibility permission, so bump `helperVersion` only when the helper itself changes. The `JT_OpenChatGPT` macro starts it through a LaunchAgent (`launchctl kickstart`), not `open`. An app started by Word borrows Word's Accessibility permission, which is what made the old Quick Action unreliable. One started by launchd gets its own entry in the Accessibility list.
 
 ### Adding a new hotkey
 

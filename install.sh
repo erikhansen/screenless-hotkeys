@@ -30,19 +30,54 @@ mkdir -p "$STARTUP" "$SCRIPTS"
 cp "$TEMPLATE" "$STARTUP/JTHotkeys.dotm"
 osacompile -o "$SCRIPTS/JTHotkeys.scpt" applescript/JTHotkeys.applescript
 
-# ChatGPT add-in hotkey: Word can't assign keys to add-in buttons, so install a
-# macOS Quick Action that clicks the button and bind Control+Option+Command+G
-# to it (the Quick Action only appears in Word).
-SERVICES="$HOME/Library/Services"
-CHATGPT_WORKFLOW="Open ChatGPT in Word.workflow"
-mkdir -p "$SERVICES"
-rm -rf "$SERVICES/$CHATGPT_WORKFLOW"
-cp -R "services/$CHATGPT_WORKFLOW" "$SERVICES/"
-defaults write pbs NSServicesStatus -dict-add \
-  '"com.krakencommerce.word-open-chatgpt - Open ChatGPT in Word - runWorkflowAsService"' \
-  '{ "key_equivalent" = "@~^g"; }'
-/System/Library/CoreServices/pbs -flush || true
-/System/Library/CoreServices/pbs -update || true
+# ChatGPT hotkey helper. It is only rebuilt when it's missing or its version
+# changes: rebuilding makes macOS forget its Accessibility permission.
+HELPER_DIR="$HOME/Applications"
+HELPER="$HELPER_DIR/JT Hotkeys Helper.app"
+HELPER_VERSION=$(sed -n 's/^property helperVersion : "\(.*\)"/\1/p' applescript/JTHotkeysHelper.applescript)
+mkdir -p "$HELPER_DIR"
+if [ ! -d "$HELPER" ] || [ "$(cat "$HELPER/Contents/Resources/helper-version" 2>/dev/null)" != "$HELPER_VERSION" ]; then
+  tools/build-helper.sh "$HELPER_DIR" "$HELPER_VERSION"
+  echo "Installed JT Hotkeys Helper. The first time you press Control+Option+Command+G,"
+  echo "allow it in System Settings > Privacy & Security > Accessibility."
+fi
+
+# The ChatGPT hotkey starts the helper through launchd so that macOS gives the
+# helper its own Accessibility permission (an app that Word opens borrows
+# Word's permission instead).
+AGENT_LABEL="com.screenless-hotkeys.helper"
+AGENT="$HOME/Library/LaunchAgents/$AGENT_LABEL.plist"
+mkdir -p "$HOME/Library/LaunchAgents"
+cat > "$AGENT" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>$AGENT_LABEL</string>
+  <key>ProgramArguments</key>
+  <array><string>$HELPER/Contents/MacOS/JT Hotkeys Helper</string></array>
+  <key>LimitLoadToSessionType</key><string>Aqua</string>
+  <key>ProcessType</key><string>Interactive</string>
+  <!-- Let the spoken result finish after the helper quits. -->
+  <key>AbandonProcessGroup</key><true/>
+</dict>
+</plist>
+PLIST
+launchctl bootout "gui/$(id -u)/$AGENT_LABEL" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$AGENT"
+
+# Remove the Quick Action that older versions used for the ChatGPT hotkey.
+# Only its own shortcut entry is removed; other Services settings are kept.
+if [ -d "$HOME/Library/Services/Open ChatGPT in Word.workflow" ]; then
+  rm -rf "$HOME/Library/Services/Open ChatGPT in Word.workflow"
+  PBS_TMP=$(mktemp)
+  if defaults export pbs "$PBS_TMP" 2>/dev/null &&
+     /usr/libexec/PlistBuddy -c "Delete :NSServicesStatus:'com.krakencommerce.word-open-chatgpt - Open ChatGPT in Word - runWorkflowAsService'" "$PBS_TMP" 2>/dev/null; then
+    defaults import pbs "$PBS_TMP"
+  fi
+  rm -f "$PBS_TMP"
+  /System/Library/CoreServices/pbs -update >/dev/null 2>&1 || true
+fi
 
 if [ "$WORD_WAS_RUNNING" = 1 ]; then open -a "Microsoft Word"; fi
 say_and_echo "J T hotkeys installed."

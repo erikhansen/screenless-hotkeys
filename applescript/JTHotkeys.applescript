@@ -20,3 +20,17 @@ on lastPrintJob(unused)
 		return ""
 	end try
 end lastPrintJob
+
+-- Starts JT Hotkeys Helper.app, which clicks the ChatGPT add-in button.
+-- It is started through launchd (a LaunchAgent that install.sh sets up), not
+-- with "open": an app opened by Word borrows Word's Accessibility permission,
+-- while one started by launchd gets its own entry in Privacy & Security.
+on openChatGPT(unused)
+	set uid to do shell script "/usr/bin/id -u"
+	try
+		do shell script "/bin/launchctl kickstart gui/" & uid & "/com.screenless-hotkeys.helper"
+	on error
+		return "missing"
+	end try
+	return ""
+end openChatGPT
