@@ -10,13 +10,15 @@ Keyboard shortcuts for Word that work without looking at the screen. Every actio
 | **Option + Command + Up Arrow** | Moves the cursor to the top of the previous page and says "Page N of M". |
 | **Option + Command + Down Arrow** | Moves the cursor to the top of the next page and says "Page N of M". At the first or last page, it also says "Top of document" or "End of document". |
 | **Control + Option + Up Arrow** | Moves the cursor to the start of the previous paragraph and says "Paragraph N of M". |
-| **Control + Option + Down Arrow** | Moves the cursor to the start of the next paragraph and says "Paragraph N of M". Empty paragraphs and tables are skipped, so the number matches the paragraph numbers on printouts. If VoiceOver is on, it takes these keys first. |
+| **Control + Option + Down Arrow** | Moves the cursor to the start of the next paragraph and says "Paragraph N of M". Empty paragraphs and tables are skipped. If VoiceOver is on, it takes these keys first. |
 | **Control + Option + Command + G** | Opens the ChatGPT panel (same as clicking the ChatGPT button on the Home tab). Needs a one-time permission; see [ChatGPT hotkey does nothing](#chatgpt-hotkey-does-nothing). |
 | **Control + Shift + V** | Says which version of JT Hotkeys is installed. |
 
 Page numbers mean physical pages counted from the start of the document. If the number is out of range, it tells you and asks again.
 
-Every printout gets **"Page N" at the bottom** of each page and a **number beside each paragraph** in the left margin (counted from the top of the document, so the numbers are the same on every printout). These are added just for printing and removed right after, so the document itself isn't changed. Empty paragraphs and tables aren't numbered, and pages that already show a page number in the footer don't get a second one. To turn this off, set `JT_PRINT_NUMBERS = False` in `src/JTHotkeys.bas` and rebuild. To see where the numbers will go, run the `JT_PreviewPrintNumbers` macro, then run it again to remove them.
+Every printout gets **"Page N" at the bottom** of each page. It's added just for printing and removed right after, so the document itself isn't changed. Pages that already show a page number in the footer don't get a second one. To turn this off, set `JT_PRINT_NUMBERS = False` in `src/JTHotkeys.bas` and rebuild.
+
+Paragraph numbers in the left margin are available but **off by default**. To turn them on, set `JT_PRINT_PARAGRAPH_NUMBERS = True` in `src/JTHotkeys.bas` and rebuild. They're counted from the top of the document the same way as the paragraph hotkeys (empty paragraphs and tables are skipped). To see where the numbers will go, run the `JT_PreviewPrintNumbers` macro, then run it again to remove them.
 
 ## First-time install
 

@@ -16,14 +16,18 @@ Attribute VB_Name = "JTHotkeys"
 '==============================================================================
 Option Explicit
 
-Public Const JT_VERSION As String = "1.4.0"
+Public Const JT_VERSION As String = "1.5.0"
 
 ' Speak confirmations out loud (uses the macOS "say" command).
 Public Const JT_SPEAK As Boolean = True
 
-' Add page numbers and paragraph numbers to printouts (temporary; the
-' document itself is not changed).
+' Add "Page N" to the bottom of each printed page (temporary; the document
+' itself is not changed).
 Public Const JT_PRINT_NUMBERS As Boolean = True
+
+' Also number each paragraph in the left margin of printouts. Off by default;
+' it needs JT_PRINT_NUMBERS to be True as well.
+Public Const JT_PRINT_PARAGRAPH_NUMBERS As Boolean = False
 
 ' When True, nothing is sent to the printer; the macro only says/logs what it
 ' would have printed. Toggle with the JT_ToggleDryRun macro (not saved).

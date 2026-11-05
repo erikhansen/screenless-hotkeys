@@ -13,9 +13,10 @@ Attribute VB_Name = "PrintPages"
 ' Page numbers are physical pages counted from the start of the document
 ' (page 1 = first page), regardless of any printed page numbering.
 '
-' The printout gets a page number at the bottom of each page and a number
-' beside each paragraph (see JT_PRINT_NUMBERS in JTHotkeys.bas). These are
-' added just for printing and removed right after; the document is unchanged.
+' The printout gets "Page N" at the bottom of each page, and optionally a
+' number beside each paragraph (see JT_PRINT_NUMBERS and
+' JT_PRINT_PARAGRAPH_NUMBERS in JTHotkeys.bas). These are added just for
+' printing and removed right after; the document is unchanged.
 '==============================================================================
 Option Explicit
 
@@ -132,7 +133,7 @@ Private Sub PrintJob(ByVal doc As Document, ByVal kind As String, ByVal pageList
 
     If JT_PRINT_NUMBERS Then
         want = PagesWanted(kind, pageList, current, pageCount)
-        nParas = AddParagraphNumbers(doc, want, added)
+        If JT_PRINT_PARAGRAPH_NUMBERS Then nParas = AddParagraphNumbers(doc, want, added)
         nPages = AddPageNumbers(doc, added)
     End If
 
@@ -358,7 +359,7 @@ Public Sub JT_PreviewPrintNumbers()
     Set previewShapes = New Collection
     n = ActiveDocument.ComputeStatistics(wdStatisticPages)
     want = PagesWanted("all", "", 0, n)
-    AddParagraphNumbers ActiveDocument, want, previewShapes
+    If JT_PRINT_PARAGRAPH_NUMBERS Then AddParagraphNumbers ActiveDocument, want, previewShapes
     AddPageNumbers ActiveDocument, previewShapes
     JT_Say "Print numbers shown. Run this again to remove them."
 End Sub
