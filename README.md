@@ -37,6 +37,43 @@ The first time Word opens after installing, it may ask whether to enable macros 
 
 This downloads the latest version, closes Word (Word asks you to save any open documents), installs the update, and reopens Word. You'll hear "J T hotkeys installed" when it's done.
 
+## Troubleshooting
+
+### "Operation not permitted" when installing
+
+If the installer stops with an error like this:
+
+```
+cp: /Users/<you>/Library/Group Containers/UBF8T346G9.Office/User Content.localized/Startup.localized/Word/JTHotkeys.dotm: Operation not permitted
+```
+
+macOS is blocking Terminal from writing to Office's shared folder. This is a privacy setting, not a file permission, so `sudo` does not help. **Don't run the installer with `sudo`.** It can also leave files you can't update later.
+
+To fix it:
+
+1. Open **System Settings > Privacy & Security > Full Disk Access**.
+2. Turn on **Terminal**, or whichever terminal app you use. If it isn't listed, click **+** and add it from Applications > Utilities.
+3. Quit Terminal completely (Command+Q) and open it again. The new setting only takes effect after a restart.
+4. Run the installer again, **without** `sudo`:
+
+   ```bash
+   ~/screenless-hotkeys/install.sh
+   ```
+
+If macOS instead asks whether Terminal "would like to access data from other apps", click **Allow**. It does the same thing.
+
+**If you already ran it with `sudo`**, check who owns the installed files:
+
+```bash
+ls -l "$HOME/Library/Group Containers/UBF8T346G9.Office/User Content.localized/Startup.localized/Word/" "$HOME/Library/Application Scripts/com.microsoft.Word/"
+```
+
+If any line shows `root`, give them back to your account once, then run the installer again (without `sudo`):
+
+```bash
+sudo chown -R "$USER" "$HOME/Library/Application Scripts/com.microsoft.Word" "$HOME/Library/Group Containers/UBF8T346G9.Office/User Content.localized/Startup.localized/Word"
+```
+
 ## Uninstall
 
 ```bash
