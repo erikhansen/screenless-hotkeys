@@ -13,12 +13,21 @@ on findRow(theOutline, label)
 	error "Row not found: " & label
 end findRow
 
+-- The project list is either directly in the editor window or inside a
+-- scroll area, depending on how the panes are docked.
+on projectOutline(vbe)
+	tell application "System Events"
+		if exists outline 1 of vbe then return outline 1 of vbe
+		return outline 1 of scroll area 1 of vbe
+	end tell
+end projectOutline
+
 on selectProject(docName)
 	tell application "System Events" to tell process "Microsoft Word"
 		set frontmost to true
 		delay 0.4
 		set vbe to (first window whose name starts with "Microsoft Visual Basic")
-		set r to my findRow(outline 1 of vbe, "Project (" & docName & ")")
+		set r to my findRow(my projectOutline(vbe), "Project (" & docName & ")")
 		set selected of r to true
 		delay 0.8
 		if name of (first window whose name starts with "Microsoft Visual Basic") is not ("Microsoft Visual Basic - " & docName) then error "Could not select project " & docName

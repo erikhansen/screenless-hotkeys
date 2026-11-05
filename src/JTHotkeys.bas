@@ -16,7 +16,7 @@ Attribute VB_Name = "JTHotkeys"
 '==============================================================================
 Option Explicit
 
-Public Const JT_VERSION As String = "1.2.0"
+Public Const JT_VERSION As String = "1.3.0"
 
 ' Speak confirmations out loud (uses the macOS "say" command).
 Public Const JT_SPEAK As Boolean = True
@@ -33,7 +33,8 @@ Public JT_DryRun As Boolean
 ' THE HOTKEY LIST. One line per hotkey.
 '   wdKeyControl = the Control key on a Mac keyboard
 '   wdKeyCommand = Command, wdKeyShift = Shift, wdKeyAlt = Option
-' Avoid Control+Option combinations - VoiceOver uses those.
+' Control+Option combinations clash with VoiceOver (its "VO" keys) and with
+' window managers such as Rectangle; check before adding more of them.
 '------------------------------------------------------------------------------
 Private Const KEY_UP_ARROW As Long = 38      ' key codes Word has no names for
 Private Const KEY_DOWN_ARROW As Long = 40
@@ -43,6 +44,8 @@ Public Sub JT_BakeHotkeys()
     BindKey "JT_SayVersion", BuildKeyCode(wdKeyControl, wdKeyShift, wdKeyV)
     BindKey "JT_PreviousPage", BuildKeyCode(wdKeyCommand, wdKeyAlt, KEY_UP_ARROW)
     BindKey "JT_NextPage", BuildKeyCode(wdKeyCommand, wdKeyAlt, KEY_DOWN_ARROW)
+    BindKey "JT_PreviousParagraph", BuildKeyCode(wdKeyControl, wdKeyAlt, KEY_UP_ARROW)
+    BindKey "JT_NextParagraph", BuildKeyCode(wdKeyControl, wdKeyAlt, KEY_DOWN_ARROW)
     ' BindKey "JT_MyNextMacro", BuildKeyCode(wdKeyControl, wdKeyShift, wdKeyX)
 End Sub
 

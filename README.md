@@ -9,6 +9,8 @@ Keyboard shortcuts for Word that work without looking at the screen. Every actio
 | **Control + Shift + P** | Print pages. Then: **Enter** prints the current page · type **7** then Enter prints page 7 · type **3-5** then Enter prints pages 3 to 5 · **1,3,6-8** also works · **all** prints the whole document · **Escape** cancels. |
 | **Option + Command + Up Arrow** | Moves the cursor to the top of the previous page and says "Page N of M". |
 | **Option + Command + Down Arrow** | Moves the cursor to the top of the next page and says "Page N of M". At the first or last page, it also says "Top of document" or "End of document". |
+| **Control + Option + Up Arrow** | Moves the cursor to the start of the previous paragraph and says "Paragraph N of M". |
+| **Control + Option + Down Arrow** | Moves the cursor to the start of the next paragraph and says "Paragraph N of M". Empty paragraphs and tables are skipped, so the number matches the paragraph numbers on printouts. If VoiceOver is on, it takes these keys first. |
 | **Control + Shift + V** | Says which version of JT Hotkeys is installed. |
 
 Page numbers mean physical pages counted from the start of the document. If the number is out of range, it tells you and asks again.
