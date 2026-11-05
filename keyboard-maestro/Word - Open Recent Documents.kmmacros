@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>Activate</key><string>Normal</string>
+		<key>Name</key><string>JT Hotkeys</string>
+		<key>UID</key><string>5440C250-252B-4438-A908-0FC8F5379FBE</string>
+		<key>Macros</key>
+		<array>
+			<dict>
+				<key>Name</key><string>Word: Open Recent Documents</string>
+				<key>UID</key><string>80B6852C-0A44-45DC-9C55-AE008B2562E8</string>
+				<key>Triggers</key>
+				<array>
+					<dict>
+						<key>FireType</key><string>Pressed</string>
+						<key>KeyCode</key><integer>31</integer>
+						<key>MacroTriggerType</key><string>HotKey</string>
+						<key>Modifiers</key><integer>4608</integer>
+					</dict>
+				</array>
+				<key>Actions</key>
+				<array>
+					<dict>
+						<key>AllWindows</key><true/>
+						<key>AlreadyActivatedActionType</key><string>Normal</string>
+						<key>Application</key>
+						<dict>
+							<key>BundleIdentifier</key><string>com.microsoft.Word</string>
+							<key>Name</key><string>Microsoft Word</string>
+							<key>NewFile</key><string>/Applications/Microsoft Word.app</string>
+						</dict>
+						<key>MacroActionType</key><string>ActivateApplication</string>
+						<key>ReopenWindows</key><false/>
+						<key>TimeOutAbortsMacro</key><true/>
+					</dict>
+					<dict>
+						<key>Conditions</key>
+						<dict>
+							<key>ConditionList</key>
+							<array>
+								<dict>
+									<key>Application</key>
+									<dict>
+										<key>BundleIdentifier</key><string>com.microsoft.Word</string>
+										<key>Name</key><string>Microsoft Word</string>
+										<key>NewFile</key><string>/Applications/Microsoft Word.app</string>
+									</dict>
+									<key>ApplicationConditionType</key><string>Active</string>
+									<key>ConditionType</key><string>Application</string>
+								</dict>
+							</array>
+							<key>ConditionListMatch</key><string>All</string>
+						</dict>
+						<key>MacroActionType</key><string>PauseUntil</string>
+						<key>TimeOutAbortsMacro</key><true/>
+					</dict>
+					<dict>
+						<key>MacroActionType</key><string>SelectMenuItem</string>
+						<key>Menu</key>
+						<array>
+							<string>File</string>
+							<string>Open Recent</string>
+							<string>More...</string>
+						</array>
+						<key>TargetApplication</key>
+						<dict>
+							<key>BundleIdentifier</key><string>com.microsoft.Word</string>
+							<key>Name</key><string>Microsoft Word</string>
+							<key>NewFile</key><string>/Applications/Microsoft Word.app</string>
+						</dict>
+						<key>TargetingType</key><string>Specific</string>
+						<key>TimeOutAbortsMacro</key><true/>
+					</dict>
+					<dict>
+						<key>MacroActionType</key><string>SpeakText</string>
+						<key>Text</key><string>Recent documents.</string>
+						<key>TimeOutAbortsMacro</key><true/>
+						<key>Voice</key><string></string>
+					</dict>
+				</array>
+			</dict>
+		</array>
+	</dict>
+</array>
+</plist>

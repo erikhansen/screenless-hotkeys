@@ -20,6 +20,16 @@ Every printout gets **"Page N" at the bottom** of each page. It's added just for
 
 Paragraph numbers in the left margin are available but **off by default**. To turn them on, set `JT_PRINT_PARAGRAPH_NUMBERS = True` in `src/JTHotkeys.bas` and rebuild. They're counted from the top of the document the same way as the paragraph hotkeys (empty paragraphs and tables are skipped). To see where the numbers will go, run the `JT_PreviewPrintNumbers` macro, then run it again to remove them.
 
+### Optional: recent documents (Keyboard Maestro)
+
+If Keyboard Maestro is installed, **Control + Shift + O** works from any app: it opens Word (if needed), shows Word's own **Recent documents** list with the cursor already in it, and says "Recent documents". Use the arrow keys to pick a document and **Enter** to open it, or **Escape** to cancel. The list comes from Word itself, not Spotlight, so it's always up to date. (It's the same as **File > Open Recent > More…**.)
+
+To set it up, double-click `keyboard-maestro/Word - Open Recent Documents.kmmacros`. Keyboard Maestro imports it in a group called **JT Hotkeys** that starts out **disabled**. Turn it on by running this in Terminal:
+
+```bash
+osascript -e 'tell application "Keyboard Maestro" to set enabled of macro group "JT Hotkeys" to true'
+```
+
 ## First-time install
 
 Open Terminal and run:
