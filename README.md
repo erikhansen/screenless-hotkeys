@@ -13,6 +13,7 @@ Keyboard shortcuts for Word that work without looking at the screen. Every actio
 | **Control + Option + Down Arrow** | Moves the cursor to the start of the next paragraph and says "Paragraph N of M". Empty paragraphs and tables are skipped. If VoiceOver is on, it takes these keys first. |
 | **Control + Option + Command + G** | Opens the ChatGPT panel (same as clicking the ChatGPT button on the Home tab). Needs a one-time permission; see [ChatGPT hotkey does nothing](#chatgpt-hotkey-does-nothing). |
 | **Control + Shift + V** | Says which version of JT Hotkeys is installed. |
+| **Control + Shift + O** | Works from any app. Opens Word's Recent documents list with the cursor already in it and says "Recent documents". **Up/Down** picks a document, **Enter** opens it, **Escape** cancels. Needs Keyboard Maestro; see [Optional: recent documents](#optional-recent-documents-keyboard-maestro). |
 
 Page numbers mean physical pages counted from the start of the document. If the number is out of range, it tells you and asks again.
 
