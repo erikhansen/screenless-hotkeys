@@ -30,5 +30,19 @@ mkdir -p "$STARTUP" "$SCRIPTS"
 cp "$TEMPLATE" "$STARTUP/JTHotkeys.dotm"
 osacompile -o "$SCRIPTS/JTHotkeys.scpt" applescript/JTHotkeys.applescript
 
+# ChatGPT add-in hotkey: Word can't assign keys to add-in buttons, so install a
+# macOS Quick Action that clicks the button and bind Control+Option+Command+G
+# to it (the Quick Action only appears in Word).
+SERVICES="$HOME/Library/Services"
+CHATGPT_WORKFLOW="Open ChatGPT in Word.workflow"
+mkdir -p "$SERVICES"
+rm -rf "$SERVICES/$CHATGPT_WORKFLOW"
+cp -R "services/$CHATGPT_WORKFLOW" "$SERVICES/"
+defaults write pbs NSServicesStatus -dict-add \
+  '"com.krakencommerce.word-open-chatgpt - Open ChatGPT in Word - runWorkflowAsService"' \
+  '{ "key_equivalent" = "@~^g"; }'
+/System/Library/CoreServices/pbs -flush || true
+/System/Library/CoreServices/pbs -update || true
+
 if [ "$WORD_WAS_RUNNING" = 1 ]; then open -a "Microsoft Word"; fi
 say_and_echo "J T hotkeys installed."

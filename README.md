@@ -11,6 +11,7 @@ Keyboard shortcuts for Word that work without looking at the screen. Every actio
 | **Option + Command + Down Arrow** | Moves the cursor to the top of the next page and says "Page N of M". At the first or last page, it also says "Top of document" or "End of document". |
 | **Control + Option + Up Arrow** | Moves the cursor to the start of the previous paragraph and says "Paragraph N of M". |
 | **Control + Option + Down Arrow** | Moves the cursor to the start of the next paragraph and says "Paragraph N of M". Empty paragraphs and tables are skipped, so the number matches the paragraph numbers on printouts. If VoiceOver is on, it takes these keys first. |
+| **Control + Option + Command + G** | Opens the ChatGPT panel (same as clicking the ChatGPT button on the Home tab). Needs a one-time permission; see [ChatGPT hotkey does nothing](#chatgpt-hotkey-does-nothing). |
 | **Control + Shift + V** | Says which version of JT Hotkeys is installed. |
 
 Page numbers mean physical pages counted from the start of the document. If the number is out of range, it tells you and asks again.
@@ -74,11 +75,23 @@ If any line shows `root`, give them back to your account once, then run the inst
 sudo chown -R "$USER" "$HOME/Library/Application Scripts/com.microsoft.Word" "$HOME/Library/Group Containers/UBF8T346G9.Office/User Content.localized/Startup.localized/Word"
 ```
 
+### ChatGPT hotkey does nothing
+
+The ChatGPT hotkey clicks the ChatGPT button for you, so macOS has to allow Word to use accessibility features. The first time it's pressed, macOS shows an "Accessibility Access" prompt and an error saying the workflow "is not allowed assistive access". To fix it once:
+
+1. Open **System Settings > Privacy & Security > Accessibility**.
+2. Turn on **Microsoft Word**. If it isn't listed, click **+** and add it from Applications.
+3. Quit Word (Command+Q) and open it again.
+4. Press **Control + Option + Command + G**. If macOS asks whether Word can control "System Events", choose **OK**.
+
+If the "not allowed assistive access" error still appears, also add `/System/Library/CoreServices/WorkflowServiceRunner.app` to the same Accessibility list. In the file picker, press Command+Shift+G and paste that path.
+
 ## Uninstall
 
 ```bash
 rm "$HOME/Library/Group Containers/UBF8T346G9.Office/User Content.localized/Startup.localized/Word/JTHotkeys.dotm"
 rm "$HOME/Library/Application Scripts/com.microsoft.Word/JTHotkeys.scpt"
+rm -r "$HOME/Library/Services/Open ChatGPT in Word.workflow"
 ```
 
 ---
@@ -88,6 +101,7 @@ rm "$HOME/Library/Application Scripts/com.microsoft.Word/JTHotkeys.scpt"
 * `src/*.bas` holds the macro source code, kept as text so changes can be reviewed and diffed.
 * `dist/JTHotkeys.dotm` is the built Word template that actually gets installed, including its key assignments. **Rebuild it with `./build.sh` whenever `src/` changes** (see [BUILD.md](BUILD.md)).
 * `applescript/JTHotkeys.applescript` lets the macros speak (Word's sandbox can only run AppleScripts kept in `~/Library/Application Scripts/com.microsoft.Word/`).
+* `services/Open ChatGPT in Word.workflow` is a macOS Quick Action that clicks the ChatGPT add-in button (its AppleScript is inside `Contents/document.wflow`). Word can't assign keys to add-in buttons, so `install.sh` copies it to `~/Library/Services` and binds Control+Option+Command+G to it through the `pbs` defaults.
 
 ### Adding a new hotkey
 
